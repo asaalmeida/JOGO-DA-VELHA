@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jogo da Velha Modular</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      font-size: 1.8em;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(80px, 1fr));
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+      max-width: 300px;
+    }
+    .cell {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      font-size: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #333;
+      background-color: #fff;
+      cursor: pointer;
+    }
+    #available-numbers {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .number-button {
+      padding: 10px 14px;
+      margin: 5px;
+      font-size: 1.2em;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background-color: #ddd;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Jogo da Velha Modular</h1>
+  <p>Objetivo: Alinhar 3 números cuja soma seja <strong>≡ 15 (mod 15)</strong></p>
+  <div id="available-numbers"></div>
+  <div id="board"></div>
+  <h2 id="status">Turno de Jogador 1</h2>
+
+  <script>
+    const n = 15;
+    const k = 15;
+    const board = Array(9).fill(null);
+    let currentPlayer = "Jogador 1";
+    const usedNumbers = new Set();
+
+    const numberButtons = document.getElementById("available-numbers");
+    for (let i = 1; i <= 9; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = "number-button";
+      btn.onclick = () => selectNumber(i, btn);
+      numberButtons.appendChild(btn);
+    }
+
+    const boardDiv = document.getElementById("board");
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.index = i;
+      cell.onclick = () => placeNumber(i);
+      boardDiv.appendChild(cell);
+    }
+
+    let selectedNumber = null;
+
+    function selectNumber(number, button) {
+      if (usedNumbers.has(number)) return;
+      selectedNumber = number;
+      document.querySelectorAll(".number-button").forEach(btn => btn.disabled = false);
+      button.disabled = true;
+    }
+
+    function placeNumber(index) {
+      if (selectedNumber === null || board[index] !== null) return;
+      board[index] = { player: currentPlayer, value: selectedNumber };
+      usedNumbers.add(selectedNumber);
+      document.querySelector(`.cell[data-index='${index}']`).textContent = selectedNumber;
+      selectedNumber = null;
+      document.querySelectorAll(".number-button").forEach(btn => btn.disabled = usedNumbers.has(parseInt(btn.textContent)));
+      if (checkWinner()) {
+        document.getElementById("status").textContent = `${currentPlayer} venceu!`;
+        disableBoard();
+      } else {
+        currentPlayer = currentPlayer === "Jogador 1" ? "Jogador 2" : "Jogador 1";
+        document.getElementById("status").textContent = `Turno de ${currentPlayer}`;
+      }
+    }
+
+    function checkWinner() {
+      const lines = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      return lines.some(line => {
+        const trio = line.map(i => board[i]?.value).filter(x => x !== undefined);
+        if (trio.length === 3 && (trio[0] + trio[1] + trio[2]) % n === k % n) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    function disableBoard() {
+      document.querySelectorAll(".cell").forEach(cell => cell.onclick = null);
+    }
+  </script>
+</body>
+</html>
